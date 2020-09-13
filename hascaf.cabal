@@ -1,0 +1,66 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hascaf
+version:        0.1.0.0
+synopsis:       Implementation of MiniDecaf in Haskell
+description:    Please see the README on GitHub at <https://github.com/dramforever/hascaf#readme>
+category:       Compiler
+homepage:       https://github.com/dramforever/hascaf#readme
+bug-reports:    https://github.com/dramforever/hascaf/issues
+author:         dramforever
+maintainer:     dramforever@live.com
+copyright:      2020 dramforever
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/dramforever/hascaf
+
+library
+  exposed-modules:
+      Hascaf.Passes.Asm
+      Hascaf.Passes.Lower
+      Hascaf.Passes.Parser
+      Hascaf.Types.AST
+      Hascaf.Types.IR
+      Hascaf.Utils.Compile
+  other-modules:
+      Paths_hascaf
+  hs-source-dirs:
+      src
+  default-extensions: NumericUnderscores OverloadedStrings
+  ghc-options: -Wall
+  build-depends:
+      base >=4.7 && <5
+    , derive-topdown
+    , filepath
+    , megaparsec
+    , parser-combinators
+    , text
+  default-language: Haskell2010
+
+executable hascaf
+  main-is: Main.hs
+  other-modules:
+      Paths_hascaf
+  hs-source-dirs:
+      app
+  default-extensions: NumericUnderscores OverloadedStrings
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , derive-topdown
+    , filepath
+    , hascaf
+    , megaparsec
+    , parser-combinators
+    , text
+  default-language: Haskell2010
