@@ -1,9 +1,14 @@
 { pkgs ? import (import ./.nix/nixpkgs.nix {}) {} }:
 
-with pkgs.pkgsCross.riscv32-embedded;
+with pkgs;
 
-mkShell {
-  name = "dev";
+let sifive-toolchain = callPackage (import ./.nix/prebuilt-toolchain.nix) {}; in
 
-  nativeBuildInputs = [ buildPackages.buildPackages.qemu ];
+stdenvNoCC.mkDerivation {
+  name = "hascaf-dev";
+
+  nativeBuildInputs = [
+    qemu parallel
+    sifive-toolchain
+  ];
 }
