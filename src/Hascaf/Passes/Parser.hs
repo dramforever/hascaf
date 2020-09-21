@@ -1,7 +1,11 @@
 module Hascaf.Passes.Parser where
 
 import           Control.Monad
+import           Control.Monad.Combinators.Expr
 import           Data.Char
+import           Data.List (sortOn)
+import qualified Data.Map as M
+import           Data.Ord (Down(..))
 import qualified Data.Text as T
 import           Data.Void (Void)
 import           Hascaf.Types.AST
@@ -47,8 +51,37 @@ typ = IntTyp <$ reserved "int"
 
 -- * Expressions
 
+allUnaryOps :: M.Map UnaryOp T.Text
+allUnaryOps = M.fromList
+    [ (Neg, "-")
+    , (Not, "~")
+    , (LNot, "!")
+    ]
+
+-- TODO Add binary operators
+
 expr :: Parser Expr
-expr = IntLit <$> intLit
+expr = makeExprParser primary [[unary]]
+    where
+        unaryTable = M.keys allUnaryOps
+        unary = Prefix $ foldr1 (.) <$> some (msum (unaryOp <$> unaryTable))
+
+-- Longest match tokenization for operators
+
+allOpNames :: [T.Text]
+allOpNames = sortOn (Down . T.length) $ snd <$> M.toList allUnaryOps
+
+parseOpName :: T.Text -> Parser ()
+parseOpName opn = try (msum (symbol <$> allOpNames) >>= guard . (== opn))
+    <?> T.unpack opn
+
+unaryOp :: UnaryOp -> Parser (Expr -> Expr)
+unaryOp op = Unary op <$ parseOpName (allUnaryOps M.! op)
+
+-- ** Primary expression
+
+primary :: Parser Expr
+primary = IntLit <$> intLit
     <?> "expression"
 
 intLit :: Parser Integer
@@ -71,6 +104,8 @@ symbol = try . L.symbol sc
 
 atom :: String -> Parser a -> Parser a
 atom lbl = label lbl . lexeme
+
+-- Longest match tokenization for names
 
 nameWord :: Parser T.Text
 nameWord = T.cons <$> satisfy isStart <*> takeWhileP Nothing isEnd

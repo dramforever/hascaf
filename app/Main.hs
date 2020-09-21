@@ -4,7 +4,6 @@ import qualified Data.Text.IO as T
 import           Hascaf.Utils.Compile
 import           System.Environment (getArgs, getProgName)
 import           System.Exit
-import           System.FilePath (replaceExtension)
 import           System.IO (hPutStr, stderr)
 
 main :: IO ()

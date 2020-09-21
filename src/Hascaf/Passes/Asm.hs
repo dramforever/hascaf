@@ -25,6 +25,15 @@ asmIR Ret = indent <$>
     , "addi sp, sp, __WORD_SIZE"
     , "jr ra"
     ]
+asmIR NegI = unary ["neg a0, a0"]
+asmIR NotI = unary ["not a0, a0"]
+asmIR LNotI = unary ["seqz a0, a0"]
+
+unary :: [T.Text] -> [T.Text]
+unary mid = indent <$>
+    [ "lw a0, 0(sp)" ]
+    ++ mid
+    ++ [ "sw a0, 0(sp)" ]
 
 header :: [T.Text]
 header =

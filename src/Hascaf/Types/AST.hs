@@ -22,6 +22,12 @@ type Compound = [Stmt]
 
 data Stmt = ReturnS Expr
 
-data Expr = IntLit Integer
+data Expr
+    = IntLit Integer
+    | Unary UnaryOp Expr
+
+data UnaryOp
+    = Neg | Not | LNot
+    deriving (Show, Eq, Ord)
 
 $(derivings [''Show, ''Eq] ''Program)

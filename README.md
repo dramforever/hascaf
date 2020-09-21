@@ -13,3 +13,4 @@ software does not mean you can ignore other rules and evade responsibility.
 ## Progress
 
 - [X] `step1`
+- [X] `step2`

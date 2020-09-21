@@ -9,4 +9,7 @@ data IR
     | Push Int32
     | Ret
     | Trap
+    | NegI
+    | NotI
+    | LNotI
     deriving (Show, Eq)
