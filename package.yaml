@@ -21,6 +21,7 @@ dependencies:
 - parser-combinators
 - filepath
 - text
+- containers
 
 ghc-options:
 - -Wall

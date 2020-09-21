@@ -27,6 +27,7 @@ source-repository head
 library
   exposed-modules:
       Hascaf.Passes.Asm
+      Hascaf.Passes.ASTCheck
       Hascaf.Passes.Lower
       Hascaf.Passes.Parser
       Hascaf.Types.AST
@@ -40,6 +41,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
+    , containers
     , derive-topdown
     , filepath
     , megaparsec
@@ -57,6 +59,7 @@ executable hascaf
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
     , derive-topdown
     , filepath
     , hascaf

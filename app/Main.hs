@@ -27,6 +27,6 @@ work src out = do
     contents <- T.readFile src
     case compile src contents of
         Left err -> do
-            hPutStrLn stderr $ err
+            T.hPutStr stderr $ err
             exitWith (ExitFailure 1)
         Right output -> T.writeFile out output

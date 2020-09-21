@@ -12,5 +12,4 @@ software does not mean you can ignore other rules and evade responsibility.
 
 ## Progress
 
-- [ ] `step1`
-    - Missing: `main` function check
+- [X] `step1`
