@@ -66,6 +66,14 @@ allBinaryOps = M.fromList
     , (Mul, "*")
     , (Div, "/")
     , (Mod, "%")
+    , (Eq, "==")
+    , (Ne, "!=")
+    , (Le, "<=")
+    , (Ge, ">=")
+    , (Lt, "<")
+    , (Gt, ">")
+    , (LAnd, "&&")
+    , (LOr, "||")
     ]
 
 expr :: Parser Expr
@@ -77,6 +85,10 @@ expr = makeExprParser primary $ [[unary]] ++ binary
         binaryTable =
             [ [Mul, Div, Mod]
             , [Add, Sub]
+            , [Le, Ge, Lt, Gt]
+            , [Eq, Ne]
+            , [LAnd]
+            , [LOr]
             ]
 
         binary = (fmap . fmap) (InfixL . binaryOp) binaryTable

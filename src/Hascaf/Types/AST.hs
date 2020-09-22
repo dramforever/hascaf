@@ -33,6 +33,8 @@ data UnaryOp
 
 data BinaryOp
     = Add | Sub | Mul | Div | Mod
+    | Eq | Ne | Le | Ge | Lt | Gt
+    | LAnd | LOr
     deriving (Show, Eq, Ord)
 
 $(derivings [''Show, ''Eq] ''Program)

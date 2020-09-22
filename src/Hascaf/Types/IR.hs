@@ -11,4 +11,6 @@ data IR
     | Trap
     | NegI | NotI | LNotI
     | AddI | SubI | MulI | DivI | ModI
+    | EqI | NeI | LeI | GeI | LtI | GtI
+    | LAndI | LOrI
     deriving (Show, Eq)

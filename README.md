@@ -15,3 +15,4 @@ software does not mean you can ignore other rules and evade responsibility.
 - [X] `step1`
 - [X] `step2`
 - [X] `step3`
+- [X] `step4`
