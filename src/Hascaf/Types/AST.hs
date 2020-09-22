@@ -25,9 +25,14 @@ data Stmt = ReturnS Expr
 data Expr
     = IntLit Integer
     | Unary UnaryOp Expr
+    | Binary BinaryOp Expr Expr
 
 data UnaryOp
     = Neg | Not | LNot
+    deriving (Show, Eq, Ord)
+
+data BinaryOp
+    = Add | Sub | Mul | Div | Mod
     deriving (Show, Eq, Ord)
 
 $(derivings [''Show, ''Eq] ''Program)

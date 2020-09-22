@@ -28,10 +28,24 @@ asmIR Ret = indent <$>
 asmIR NegI = unary ["neg a0, a0"]
 asmIR NotI = unary ["not a0, a0"]
 asmIR LNotI = unary ["seqz a0, a0"]
+asmIR AddI = binary ["add a0, a0, a1"]
+asmIR SubI = binary ["sub a0, a0, a1"]
+asmIR MulI = binary ["mul a0, a0, a1"]
+asmIR DivI = binary ["div a0, a0, a1"]
+asmIR ModI = binary ["rem a0, a0, a1"]
 
 unary :: [T.Text] -> [T.Text]
 unary mid = indent <$>
     [ "lw a0, 0(sp)" ]
+    ++ mid
+    ++ [ "sw a0, 0(sp)" ]
+
+binary :: [T.Text] -> [T.Text]
+binary mid = indent <$>
+    [ "lw a0, __WORD_SIZE(sp)"
+    , "lw a1, 0(sp)"
+    , "addi sp, sp, __WORD_SIZE"
+    ]
     ++ mid
     ++ [ "sw a0, 0(sp)" ]
 

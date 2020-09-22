@@ -3,6 +3,7 @@ module Hascaf.Passes.Parser where
 import           Control.Monad
 import           Control.Monad.Combinators.Expr
 import           Data.Char
+import           Data.Foldable (toList)
 import           Data.List (sortOn)
 import qualified Data.Map as M
 import           Data.Ord (Down(..))
@@ -58,18 +59,33 @@ allUnaryOps = M.fromList
     , (LNot, "!")
     ]
 
--- TODO Add binary operators
+allBinaryOps :: M.Map BinaryOp T.Text
+allBinaryOps = M.fromList
+    [ (Add, "+")
+    , (Sub, "-")
+    , (Mul, "*")
+    , (Div, "/")
+    , (Mod, "%")
+    ]
 
 expr :: Parser Expr
-expr = makeExprParser primary [[unary]]
+expr = makeExprParser primary $ [[unary]] ++ binary
     where
         unaryTable = M.keys allUnaryOps
         unary = Prefix $ foldr1 (.) <$> some (msum (unaryOp <$> unaryTable))
 
+        binaryTable =
+            [ [Mul, Div, Mod]
+            , [Add, Sub]
+            ]
+
+        binary = (fmap . fmap) (InfixL . binaryOp) binaryTable
+
 -- Longest match tokenization for operators
 
 allOpNames :: [T.Text]
-allOpNames = sortOn (Down . T.length) $ snd <$> M.toList allUnaryOps
+allOpNames = sortOn (Down . T.length) $
+    toList allUnaryOps ++ toList allBinaryOps
 
 parseOpName :: T.Text -> Parser ()
 parseOpName opn = try (msum (symbol <$> allOpNames) >>= guard . (== opn))
@@ -78,10 +94,15 @@ parseOpName opn = try (msum (symbol <$> allOpNames) >>= guard . (== opn))
 unaryOp :: UnaryOp -> Parser (Expr -> Expr)
 unaryOp op = Unary op <$ parseOpName (allUnaryOps M.! op)
 
+binaryOp :: BinaryOp -> Parser (Expr -> Expr -> Expr)
+binaryOp op = Binary op <$ parseOpName (allBinaryOps M.! op)
+
 -- ** Primary expression
 
 primary :: Parser Expr
-primary = IntLit <$> intLit
+primary =
+    IntLit <$> intLit
+    <|> between (symbol "(") (symbol ")") expr
     <?> "expression"
 
 intLit :: Parser Integer

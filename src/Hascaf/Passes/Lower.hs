@@ -19,8 +19,16 @@ lowerStmt (ReturnS expr) = lowerExpr expr ++ [ Ret ]
 lowerExpr :: Expr -> [IR]
 lowerExpr (Unary op x) = lowerExpr x ++ lowerUnaryOp op
 lowerExpr (IntLit x) = [ Push (fromInteger x) ]
+lowerExpr (Binary op x y) = lowerExpr x ++ lowerExpr y ++ lowerBinaryOp op
 
 lowerUnaryOp :: UnaryOp -> [IR]
 lowerUnaryOp Neg = [NegI]
 lowerUnaryOp Not = [NotI]
 lowerUnaryOp LNot = [LNotI]
+
+lowerBinaryOp :: BinaryOp -> [IR]
+lowerBinaryOp Add = [AddI]
+lowerBinaryOp Sub = [SubI]
+lowerBinaryOp Mul = [MulI]
+lowerBinaryOp Div = [DivI]
+lowerBinaryOp Mod = [ModI]

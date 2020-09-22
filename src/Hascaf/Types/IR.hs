@@ -9,7 +9,6 @@ data IR
     | Push Int32
     | Ret
     | Trap
-    | NegI
-    | NotI
-    | LNotI
+    | NegI | NotI | LNotI
+    | AddI | SubI | MulI | DivI | ModI
     deriving (Show, Eq)
