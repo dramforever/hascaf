@@ -18,30 +18,31 @@ type Parser = Parsec Void T.Text
 
 -- * Top-level
 
-parseTestProgram :: T.Text -> IO ()
-parseTestProgram = parseTest program
-
-parseProgram :: String -> T.Text -> Either (ParseErrorBundle T.Text Void) Program
+parseProgram :: String -> T.Text -> Either (ParseErrorBundle T.Text Void) (Program Syn)
 parseProgram = parse program
 
-program :: Parser Program
+program :: Parser (Program Syn)
 program = Program <$ sc <*> manyTill topLevel eof
 
-topLevel :: Parser TopLevel
+topLevel :: Parser (TopLevel Syn)
 topLevel = FunctionTop <$> function
 
-function :: Parser Function
-function = Function <$> typ <*> ident <* symbol "(" <* symbol ")" <*> compound
+function :: Parser (Function Syn)
+function = Function () <$> typ <*> ident <* symbol "(" <* symbol ")" <*> compound
     <?> "function"
 
 -- * Statements
 
-compound :: Parser Compound
-compound = symbol "{" *> manyTill stmt (symbol "}")
+compound :: Parser (Compound Syn)
+compound = Compound <$ symbol "{" <*> manyTill stmt (symbol "}")
     <?> "compound_statement"
 
-stmt :: Parser Stmt
-stmt = ReturnS <$ reserved "return" <*> expr <* symbol ";"
+stmt :: Parser (Stmt Syn)
+stmt =
+    ReturnS <$ reserved "return" <*> expr <* symbol ";"
+    <|> ExprS <$> expr <* symbol ";"
+    <|> DeclS <$> typ <*> var <*> optional (symbol "=" *> expr) <* symbol ";"
+    <|> EmptyS <$ symbol ";"
     <?> "statement"
 
 -- * Types
@@ -76,8 +77,9 @@ allBinaryOps = M.fromList
     , (LOr, "||")
     ]
 
-expr :: Parser Expr
-expr = makeExprParser primary $ [[unary]] ++ binary
+expr :: Parser (Expr Syn)
+expr = makeExprParser primary $
+    [[ unary ]] ++ binary ++ [[ InfixR (Assignment <$ symbol "=") ]]
     where
         unaryTable = M.keys allUnaryOps
         unary = Prefix $ foldr1 (.) <$> some (msum (unaryOp <$> unaryTable))
@@ -97,25 +99,29 @@ expr = makeExprParser primary $ [[unary]] ++ binary
 
 allOpNames :: [T.Text]
 allOpNames = sortOn (Down . T.length) $
-    toList allUnaryOps ++ toList allBinaryOps
+    toList allUnaryOps ++ toList allBinaryOps ++ [ "=" ]
 
 parseOpName :: T.Text -> Parser ()
 parseOpName opn = try (msum (symbol <$> allOpNames) >>= guard . (== opn))
-    <?> T.unpack opn
+    <?> ("'" ++ T.unpack opn ++ "'")
 
-unaryOp :: UnaryOp -> Parser (Expr -> Expr)
+unaryOp :: UnaryOp -> Parser (Expr x -> Expr x)
 unaryOp op = Unary op <$ parseOpName (allUnaryOps M.! op)
 
-binaryOp :: BinaryOp -> Parser (Expr -> Expr -> Expr)
+binaryOp :: BinaryOp -> Parser (Expr x -> Expr x -> Expr x)
 binaryOp op = Binary op <$ parseOpName (allBinaryOps M.! op)
 
 -- ** Primary expression
 
-primary :: Parser Expr
+primary :: Parser (Expr Syn)
 primary =
     IntLit <$> intLit
+    <|> VarRef <$> var
     <|> between (symbol "(") (symbol ")") expr
     <?> "expression"
+
+var :: Parser (Var Syn)
+var = Var () <$> ident
 
 intLit :: Parser Integer
 intLit = do

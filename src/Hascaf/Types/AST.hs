@@ -3,29 +3,44 @@
 
 module Hascaf.Types.AST where
 
-import           Data.Derive.TopDown
+import           Data.Kind
 import qualified Data.Text as T
 
 newtype Ident = Ident T.Text
+    deriving (Show, Eq, Ord)
 
-data Program = Program [TopLevel]
+data Program x = Program [TopLevel x]
 
-data TopLevel = FunctionTop Function
+data TopLevel x = FunctionTop (Function x)
 
-data Function = Function Typ Ident Compound
+data Function x = Function (XFunction x) Typ Ident (Compound x)
 
-data Declaration = Declaration Typ Ident
+type family XFunction x :: Type
+
+data Declaration x = Declaration Typ Ident
 
 data Typ = IntTyp
+    deriving (Show, Eq)
 
-type Compound = [Stmt]
+data Compound x = Compound [Stmt x]
 
-data Stmt = ReturnS Expr
+data Stmt x
+    = ReturnS (Expr x)
+    | ExprS (Expr x)
+    | DeclS Typ (Var x) (Maybe (Expr x))
+    | EmptyS
 
-data Expr
+data Expr x
     = IntLit Integer
-    | Unary UnaryOp Expr
-    | Binary BinaryOp Expr Expr
+    | Unary UnaryOp (Expr x)
+    | Binary BinaryOp (Expr x) (Expr x)
+    | Assignment (LValue x) (Expr x)
+    | VarRef (Var x)
+
+type family LValue x :: Type
+
+data Var x = Var (XVar x) Ident
+type family XVar x :: Type
 
 data UnaryOp
     = Neg | Not | LNot
@@ -37,4 +52,30 @@ data BinaryOp
     | LAnd | LOr
     deriving (Show, Eq, Ord)
 
-$(derivings [''Show, ''Eq] ''Program)
+-- * Extensions
+
+data Syn
+data Tc
+
+type instance XFunction Syn = ()
+type instance XFunction Tc = FunctionInfo
+
+data FunctionInfo
+    = FunctionInfo
+    { f_localSize :: Int -- ^ Maximum size of local variables, in words
+    }
+
+type instance XVar Syn = ()
+type instance XVar Tc = VarInfo
+
+data VarInfo
+    = VarInfo
+    { v_type :: Typ
+    , v_loc :: Int
+    }
+
+type instance LValue Syn = Expr Syn
+type instance LValue Tc = TcLValue
+
+data TcLValue
+    = VarL (Var Tc)

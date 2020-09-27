@@ -9,10 +9,10 @@ data ASTError
 prettyASTError :: ASTError -> T.Text
 prettyASTError ASTNoMain = "No main function"
 
-checkProgramAST :: Program -> [ASTError]
+checkProgramAST :: Program Syn -> [ASTError]
 checkProgramAST (Program tops) =
     if any isMain tops
         then []
         else [ASTNoMain]
 
-    where isMain (FunctionTop (Function _ name _)) = name == Ident "main"
+    where isMain (FunctionTop (Function _ _ name _)) = name == Ident "main"

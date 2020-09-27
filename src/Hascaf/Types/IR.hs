@@ -4,13 +4,17 @@ import           Data.Int
 import qualified Data.Text as T
 
 data IR
-    = Fun T.Text
+    = Fun T.Text Int
+    | EndFun Int
     | Loc T.Text
     | Push Int32
+    | Pop
     | Ret
     | Trap
     | NegI | NotI | LNotI
     | AddI | SubI | MulI | DivI | ModI
     | EqI | NeI | LeI | GeI | LtI | GtI
     | LAndI | LOrI
+    | FrameAddr Int
+    | Load | Store
     deriving (Show, Eq)

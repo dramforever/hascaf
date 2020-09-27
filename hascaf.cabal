@@ -30,21 +30,24 @@ library
       Hascaf.Passes.ASTCheck
       Hascaf.Passes.Lower
       Hascaf.Passes.Parser
+      Hascaf.Passes.Typing
       Hascaf.Types.AST
       Hascaf.Types.IR
       Hascaf.Utils.Compile
+      Hascaf.Utils.Errors
   other-modules:
       Paths_hascaf
   hs-source-dirs:
       src
-  default-extensions: NumericUnderscores OverloadedStrings
+  default-extensions: NumericUnderscores OverloadedStrings TypeFamilies FlexibleContexts UndecidableInstances
   ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
     , containers
-    , derive-topdown
     , filepath
     , megaparsec
+    , microlens-platform
+    , mtl
     , parser-combinators
     , text
   default-language: Haskell2010
@@ -55,15 +58,16 @@ executable hascaf
       Paths_hascaf
   hs-source-dirs:
       app
-  default-extensions: NumericUnderscores OverloadedStrings
+  default-extensions: NumericUnderscores OverloadedStrings TypeFamilies FlexibleContexts UndecidableInstances
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers
-    , derive-topdown
     , filepath
     , hascaf
     , megaparsec
+    , microlens-platform
+    , mtl
     , parser-combinators
     , text
   default-language: Haskell2010

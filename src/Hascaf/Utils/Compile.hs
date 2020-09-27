@@ -6,6 +6,8 @@ import           Hascaf.Passes.ASTCheck
 import           Hascaf.Passes.Asm
 import           Hascaf.Passes.Lower
 import           Hascaf.Passes.Parser
+import           Hascaf.Passes.Typing
+import           Hascaf.Utils.Errors
 import           Text.Megaparsec
 
 compile :: FilePath -> T.Text -> Either T.Text T.Text
@@ -14,5 +16,8 @@ compile filePath contents = do
         parseProgram filePath contents
     case checkProgramAST parsed of
         [] -> pure ()
-        errs -> Left (T.unlines $ ("error: " <>) . prettyASTError <$> errs)
-    pure $ (assemble . lowerProgram $ parsed)
+        errs -> Left (T.unlines $ ("AST error: " <>) . prettyASTError <$> errs)
+
+    case runErrors (checkProgram parsed) of
+        Left errs -> Left (T.unlines $ ("Type error: " <>) . prettyTypeError <$> errs)
+        Right checked -> pure $ (assemble . lowerProgram $ checked)

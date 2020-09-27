@@ -16,12 +16,13 @@ description: Please see the README on GitHub at <https://github.com/dramforever/
 
 dependencies:
 - base >= 4.7 && < 5
-- derive-topdown
 - megaparsec
 - parser-combinators
 - filepath
 - text
 - containers
+- mtl
+- microlens-platform
 
 ghc-options:
 - -Wall
@@ -29,6 +30,9 @@ ghc-options:
 default-extensions:
 - NumericUnderscores
 - OverloadedStrings
+- TypeFamilies
+- FlexibleContexts
+- UndecidableInstances
 
 library:
   source-dirs: src

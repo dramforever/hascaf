@@ -16,3 +16,11 @@ software does not mean you can ignore other rules and evade responsibility.
 - [X] `step2`
 - [X] `step3`
 - [X] `step4`
+- [X] `step5`
+- [ ] `step6`
+- [ ] `step7`
+- [ ] `step8`
+- [ ] `step9`
+- [ ] `step10`
+- [ ] `step11`
+- [ ] `step12`
