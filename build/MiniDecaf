@@ -1,4 +1,3 @@
 #!/usr/bin/env sh
 
-cd "$(dirname "$0")/.."
-stack run -- "$@"
+exec "$(dirname "$0")/hascaf" "$@"
