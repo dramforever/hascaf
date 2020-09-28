@@ -18,7 +18,7 @@ software does not mean you can ignore other rules and evade responsibility.
 - [X] `step4`
 - [X] `step5`
 - [X] `step6`
-- [ ] `step7`
+- [X] `step7`
 - [ ] `step8`
 - [ ] `step9`
 - [ ] `step10`

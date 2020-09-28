@@ -5,6 +5,7 @@ module Hascaf.Passes.Typing where
 
 import           Control.Applicative
 import           Control.Monad.State
+import           Data.Foldable (asum)
 import qualified Data.Map as M
 import qualified Data.Text as T
 import           Hascaf.Types.AST
@@ -30,7 +31,7 @@ data StatementState
     = StatementState
     { _ss_curStack :: Int
     , _ss_maxStack :: Int
-    , _ss_vars :: M.Map Ident VarInfo
+    , _ss_vars :: [M.Map Ident VarInfo]
     , _ss_supply :: Int
     }
 
@@ -87,7 +88,7 @@ checkFunction (Function () typ ident compound) = do
     let initialSS = StatementState
             { _ss_curStack = 0
             , _ss_maxStack = 0
-            , _ss_vars = M.empty
+            , _ss_vars = [M.empty]
             , _ss_supply = 0
             }
 
@@ -123,8 +124,13 @@ checkStmt table _ret (DeclS dty var@(Var () v) initial) = do
 
 checkStmt _table _ret EmptyS = pureC EmptyS
 
-checkStmt table ret (CompoundS compound) =
-    CompoundS <$.> checkCompound table ret compound
+checkStmt table ret (CompoundS compound) = do
+    savedCurSize <- use ss_curStack
+    ss_vars %= (M.empty :)
+    res <- CompoundS <$.> checkCompound table ret compound
+    ss_curStack .= savedCurSize
+    ss_vars %= tail
+    pure res
 
 checkStmt table ret (IfS () cond t e) = do
     next <- ss_supply <<%= (+ 1)
@@ -168,24 +174,24 @@ checkExpr table (Ternary () c t e) = do
 
 checkVarUse :: Ident -> State StatementState (TypingE (Var Tc, Typ))
 checkVarUse v = do
-    vdecl <- use (ss_vars . at v)
-    pure $ case vdecl of
+    vdecls <- use ss_vars
+    pure $ case asum (M.lookup v <$> vdecls) of
         Nothing -> mkError [UndeclaredVariable v]
         Just vi -> pure (Var vi v, v_type vi)
 
 checkVarDef :: Typ -> Var Syn -> State StatementState (TypingE (Var Tc))
-checkVarDef typ (Var () var) = do
-    vdecl <- use (ss_vars . at var)
-    case vdecl of
-        Just _ -> do
-            pure $ mkError [RedefinedVariable var]
-        _ -> do
+checkVarDef typ (Var () v) = do
+    vdecl <- use ss_vars
+    if v `M.member` head vdecl
+        then do
+            pure $ mkError [RedefinedVariable v]
+        else do
             pos <- use ss_curStack
             size <- ss_curStack <%= (+ 1)
             ss_maxStack %= max size
             let vi = VarInfo { v_type = typ, v_loc = pos }
-            ss_vars . at var ?= vi
-            pureC $ Var vi var
+            ss_vars . _head . at v ?= vi
+            pureC $ Var vi v
 
 -- Lenses
 
@@ -197,7 +203,7 @@ ss_maxStack :: Lens' StatementState Int
 ss_maxStack f x =
     (\u' -> x { _ss_maxStack = u' }) <$> f (_ss_maxStack x)
 
-ss_vars :: Lens' StatementState (M.Map Ident VarInfo)
+ss_vars :: Lens' StatementState [M.Map Ident VarInfo]
 ss_vars f x =
     (\u' -> x { _ss_vars = u' }) <$> f (_ss_vars x)
 
