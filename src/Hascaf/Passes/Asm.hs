@@ -70,6 +70,19 @@ asmIR Store = indent <$>
     , "sw t1, __XLEN(sp)"
     , "addi sp, sp, __XLEN"
     ]
+asmIR (Beqz loc) = indent <$>
+    [ "lw t0, 0(sp)"
+    , "addi sp, sp, 4"
+    , "beqz t0, ." <> loc
+    ]
+asmIR (Bnez loc) = indent <$>
+    [ "lw t0, 0(sp)"
+    , "addi sp, sp, 4"
+    , "beqz t0, ." <> loc
+    ]
+asmIR (Br loc) = indent <$>
+    [ "j ." <> loc
+    ]
 
 unary :: [T.Text] -> [T.Text]
 unary mid = indent <$>

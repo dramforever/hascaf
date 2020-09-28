@@ -22,6 +22,7 @@ data TypeError
     | AssignmentNotLValue
     | InvalidUnaryType UnaryOp Typ
     | InvalidBinaryType BinaryOp Typ Typ
+    | TernaryTypeMismatch Typ Typ
 
 type FunctionTable = M.Map Ident Typ
 
@@ -30,6 +31,7 @@ data StatementState
     { _ss_curStack :: Int
     , _ss_maxStack :: Int
     , _ss_vars :: M.Map Ident VarInfo
+    , _ss_supply :: Int
     }
 
 prettyTypeError :: TypeError -> T.Text
@@ -58,6 +60,10 @@ prettyTypeError (InvalidBinaryType op tl tr) =
     "Binary operator " <> T.pack (show op)
     <> " cannot have operand types " <> T.pack (show tl)
     <> " and " <> T.pack (show tr)
+prettyTypeError (TernaryTypeMismatch tty ety) =
+    "Ternary type mismatch,"
+    <> " true branch is " <> T.pack (show tty) <> ","
+    <> " false branch is " <> T.pack (show ety)
 
 checkProgram :: Program Syn -> TypingE (Program Tc)
 checkProgram (Program tops) =
@@ -82,6 +88,7 @@ checkFunction (Function () typ ident compound) = do
             { _ss_curStack = 0
             , _ss_maxStack = 0
             , _ss_vars = M.empty
+            , _ss_supply = 0
             }
 
     table <- get
@@ -90,8 +97,6 @@ checkFunction (Function () typ ident compound) = do
             { f_localSize = ss ^. ss_maxStack
             }
     pure $ errs *> (Function fi typ ident <$> res)
-
-type CheckInner thing = thing Syn -> State StatementState (TypingE (thing Tc))
 
 checkCompound :: FunctionTable -> Typ -> Compound Syn -> State StatementState (TypingE (Compound Tc))
 checkCompound table ret (Compound stmts) =
@@ -104,7 +109,9 @@ checkStmt table ret (ReturnS expr) =
         then pure $ ReturnS e
         else mkError [ReturnTypeMismatch ret ty])
     <$> checkExpr table expr
+
 checkStmt table _ret (ExprS expr) = ExprS . fst <$.> checkExpr table expr
+
 checkStmt table _ret (DeclS dty var@(Var () v) initial) = do
     let checkInitial expr =
             (>>=? \(e, ety) ->
@@ -113,7 +120,18 @@ checkStmt table _ret (DeclS dty var@(Var () v) initial) = do
                 else mkError [AssignmentTypeMismatch v dty ety])
             <$> checkExpr table expr
     DeclS dty <$.> checkVarDef dty var <*.> traverseC checkInitial initial
+
 checkStmt _table _ret EmptyS = pureC EmptyS
+
+checkStmt table ret (CompoundS compound) =
+    CompoundS <$.> checkCompound table ret compound
+
+checkStmt table ret (IfS () cond t e) = do
+    next <- ss_supply <<%= (+ 1)
+    IfS (T.pack $ "__if_" ++ show next)
+        <$.> (fst <$.> checkExpr table cond)
+        <*.> checkStmt table ret t
+        <*.> traverseC (checkStmt table ret) e
 
 checkExpr :: FunctionTable -> Expr Syn -> State StatementState (TypingE (Expr Tc, Typ))
 checkExpr _table (IntLit lit) = pureC (IntLit lit, IntTyp)
@@ -130,7 +148,7 @@ checkExpr table (Binary op lhs rhs) =
 checkExpr table (Assignment (VarRef (Var () v)) expr) =
     (>>=? \((var, tv), (e, te)) ->
         if tv == te
-            then pure $ (Assignment (VarL var) e, tv)
+            then pure (Assignment (VarL var) e, tv)
             else mkError [AssignmentTypeMismatch v tv te])
     <$> ((,) <$.> checkVarUse v <*.> checkExpr table expr)
 
@@ -138,6 +156,15 @@ checkExpr _table (Assignment _ _expr) = pure $ mkError [AssignmentNotLValue]
 
 checkExpr _table (VarRef (Var () v)) =
     (_1 %~ VarRef) <$.> checkVarUse v
+
+checkExpr table (Ternary () c t e) = do
+    next <- ss_supply <<%= (+1)
+    let prefix = T.pack $ "_tern_" ++ show next
+    (>>=? \((cc, _cty), (ct, tty), (ce, ety)) ->
+        if tty == ety
+            then pure (Ternary prefix cc ct ce, tty)
+            else mkError [TernaryTypeMismatch tty ety])
+        <$> ((,,) <$.> checkExpr table c <*.> checkExpr table t <*.> checkExpr table e)
 
 checkVarUse :: Ident -> State StatementState (TypingE (Var Tc, Typ))
 checkVarUse v = do
@@ -173,6 +200,10 @@ ss_maxStack f x =
 ss_vars :: Lens' StatementState (M.Map Ident VarInfo)
 ss_vars f x =
     (\u' -> x { _ss_vars = u' }) <$> f (_ss_vars x)
+
+ss_supply :: Lens' StatementState Int
+ss_supply f x =
+    (\u' -> x { _ss_supply = u' }) <$> f (_ss_supply x)
 
 -- Double bagging
 

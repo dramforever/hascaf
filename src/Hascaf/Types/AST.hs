@@ -29,6 +29,10 @@ data Stmt x
     | ExprS (Expr x)
     | DeclS Typ (Var x) (Maybe (Expr x))
     | EmptyS
+    | CompoundS (Compound x)
+    | IfS (XPrefix x) (Expr x) (Stmt x) (Maybe (Stmt x))
+
+type family XPrefix x :: Type
 
 data Expr x
     = IntLit Integer
@@ -36,6 +40,7 @@ data Expr x
     | Binary BinaryOp (Expr x) (Expr x)
     | Assignment (LValue x) (Expr x)
     | VarRef (Var x)
+    | Ternary (XPrefix x) (Expr x) (Expr x) (Expr x)
 
 type family LValue x :: Type
 
@@ -79,3 +84,6 @@ type instance LValue Tc = TcLValue
 
 data TcLValue
     = VarL (Var Tc)
+
+type instance XPrefix Syn = ()
+type instance XPrefix Tc = T.Text

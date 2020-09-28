@@ -34,15 +34,25 @@ function = Function () <$> typ <*> ident <* symbol "(" <* symbol ")" <*> compoun
 -- * Statements
 
 compound :: Parser (Compound Syn)
-compound = Compound <$ symbol "{" <*> manyTill stmt (symbol "}")
+compound = Compound <$ symbol "{" <*> manyTill blockItem (symbol "}")
     <?> "compound_statement"
+
+blockItem :: Parser (Stmt Syn)
+blockItem =
+    stmt
+    <|> DeclS <$> typ <*> var <*> optional (symbol "=" *> expr) <* symbol ";"
 
 stmt :: Parser (Stmt Syn)
 stmt =
     ReturnS <$ reserved "return" <*> expr <* symbol ";"
-    <|> ExprS <$> expr <* symbol ";"
-    <|> DeclS <$> typ <*> var <*> optional (symbol "=" *> expr) <* symbol ";"
     <|> EmptyS <$ symbol ";"
+    <|> CompoundS <$> compound
+    <|> IfS ()
+        <$ reserved "if"
+        <*> between (symbol "(") (symbol ")") expr
+        <*> stmt
+        <*> optional (reserved "else" *> stmt)
+    <|> ExprS <$> expr <* symbol ";"
     <?> "statement"
 
 -- * Types
@@ -78,8 +88,16 @@ allBinaryOps = M.fromList
     ]
 
 expr :: Parser (Expr Syn)
-expr = makeExprParser primary $
-    [[ unary ]] ++ binary ++ [[ InfixR (Assignment <$ symbol "=") ]]
+expr = foldr1 Assignment <$> sepBy1 condExpr (symbol "=")
+
+condExpr :: Parser (Expr Syn)
+condExpr = do
+    e <- opExpr
+    (Ternary () e <$ symbol "?" <*> expr <* symbol ":" <*> condExpr)
+        <|> pure e
+
+opExpr :: Parser (Expr Syn)
+opExpr = makeExprParser primary $ [[ unary ]] ++ binary
     where
         unaryTable = M.keys allUnaryOps
         unary = Prefix $ foldr1 (.) <$> some (msum (unaryOp <$> unaryTable))
@@ -156,6 +174,8 @@ reservedWords :: [T.Text]
 reservedWords =
     [ "int"
     , "return"
+    , "if"
+    , "else"
     ]
 
 reserved :: T.Text -> Parser ()

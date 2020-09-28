@@ -17,4 +17,7 @@ data IR
     | LAndI | LOrI
     | FrameAddr Int
     | Load | Store
+    | Beqz T.Text
+    | Bnez T.Text
+    | Br T.Text
     deriving (Show, Eq)
