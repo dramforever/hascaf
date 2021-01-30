@@ -1,9 +1,0 @@
-resolver: lts-16.13
-
-packages:
-- .
-
-extra-deps:
-- derive-topdown-0.0.2.0@sha256:9a499e8ec63b4cc423df5caa0209b46e549ae3a043cf7092414de41f2b7ed766,2731
-
-local-bin-path: build/

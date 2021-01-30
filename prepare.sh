@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
 cd "$(dirname "$0")"
-stack install
+cabal v2-install --installdir="$(pwd)/build"
