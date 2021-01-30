@@ -32,7 +32,6 @@ data StatementState
     { _ss_curStack :: Int
     , _ss_maxStack :: Int
     , _ss_vars :: [M.Map Ident VarInfo]
-    , _ss_supply :: Int
     }
 
 prettyTypeError :: TypeError -> T.Text
@@ -89,7 +88,6 @@ checkFunction (Function () typ ident compound) = do
             { _ss_curStack = 0
             , _ss_maxStack = 0
             , _ss_vars = [M.empty]
-            , _ss_supply = 0
             }
 
     table <- get
@@ -132,12 +130,11 @@ checkStmt table ret (CompoundS compound) = do
     ss_vars %= tail
     pure res
 
-checkStmt table ret (IfS () cond t e) = do
-    next <- ss_supply <<%= (+ 1)
-    IfS (T.pack $ "__if_" ++ show next)
-        <$.> (fst <$.> checkExpr table cond)
-        <*.> checkStmt table ret t
-        <*.> traverseC (checkStmt table ret) e
+checkStmt table ret (IfS () cond t e) =
+    IfS ()
+    <$.> (fst <$.> checkExpr table cond)
+    <*.> checkStmt table ret t
+    <*.> traverseC (checkStmt table ret) e
 
 checkExpr :: FunctionTable -> Expr Syn -> State StatementState (TypingE (Expr Tc, Typ))
 checkExpr _table (IntLit lit) = pureC (IntLit lit, IntTyp)
@@ -163,12 +160,10 @@ checkExpr _table (Assignment _ _expr) = pure $ mkError [AssignmentNotLValue]
 checkExpr _table (VarRef (Var () v)) =
     (_1 %~ VarRef) <$.> checkVarUse v
 
-checkExpr table (Ternary () c t e) = do
-    next <- ss_supply <<%= (+1)
-    let prefix = T.pack $ "_tern_" ++ show next
+checkExpr table (Ternary () c t e) =
     (>>=? \((cc, _cty), (ct, tty), (ce, ety)) ->
         if tty == ety
-            then pure (Ternary prefix cc ct ce, tty)
+            then pure (Ternary () cc ct ce, tty)
             else mkError [TernaryTypeMismatch tty ety])
         <$> ((,,) <$.> checkExpr table c <*.> checkExpr table t <*.> checkExpr table e)
 
@@ -206,10 +201,6 @@ ss_maxStack f x =
 ss_vars :: Lens' StatementState [M.Map Ident VarInfo]
 ss_vars f x =
     (\u' -> x { _ss_vars = u' }) <$> f (_ss_vars x)
-
-ss_supply :: Lens' StatementState Int
-ss_supply f x =
-    (\u' -> x { _ss_supply = u' }) <$> f (_ss_supply x)
 
 -- Double bagging
 

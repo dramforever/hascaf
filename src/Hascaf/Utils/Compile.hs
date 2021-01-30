@@ -4,6 +4,7 @@ import           Data.Bifunctor
 import qualified Data.Text as T
 import           Hascaf.Passes.ASTCheck
 import           Hascaf.Passes.Asm
+import           Hascaf.Passes.Label
 import           Hascaf.Passes.Lower
 import           Hascaf.Passes.Parser
 import           Hascaf.Passes.Typing
@@ -20,4 +21,4 @@ compile filePath contents = do
 
     case runErrors (checkProgram parsed) of
         Left errs -> Left (T.unlines $ ("Type error: " <>) . prettyTypeError <$> errs)
-        Right checked -> pure $ (assemble . lowerProgram $ checked)
+        Right checked -> pure $ (assemble . lowerProgram . labelProgram $ checked)

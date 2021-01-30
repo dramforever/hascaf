@@ -45,6 +45,7 @@ library
   exposed-modules:
     Hascaf.Passes.Asm
     Hascaf.Passes.ASTCheck
+    Hascaf.Passes.Label
     Hascaf.Passes.Lower
     Hascaf.Passes.Parser
     Hascaf.Passes.Typing

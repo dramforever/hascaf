@@ -3,19 +3,19 @@ module Hascaf.Passes.Lower where
 import Hascaf.Types.AST
 import Hascaf.Types.IR
 
-lowerProgram :: Program Tc -> [IR]
+lowerProgram :: Program Lbl -> [IR]
 lowerProgram (Program tops) = tops >>= lowerTopLevel
 
-lowerTopLevel :: TopLevel Tc -> [IR]
+lowerTopLevel :: TopLevel Lbl -> [IR]
 lowerTopLevel (FunctionTop func) = lowerFunction func
 
-lowerFunction :: Function Tc -> [IR]
+lowerFunction :: Function Lbl -> [IR]
 lowerFunction (Function finfo _ (Ident name) (Compound stmts)) =
     [ Fun name (f_localSize finfo) ]
     ++ (stmts >>= lowerStmt)
     ++ [ Push 0, EndFun (f_localSize finfo) ]
 
-lowerStmt :: Stmt Tc -> [IR]
+lowerStmt :: Stmt Lbl -> [IR]
 lowerStmt (ReturnS expr) = lowerExpr expr ++ [ Ret ]
 lowerStmt (ExprS expr) = lowerExpr expr ++ [ Pop ]
 lowerStmt (DeclS _ var initial) =
@@ -39,7 +39,7 @@ lowerStmt (IfS prefix cond t (Just e)) =
     ] ++ lowerStmt e
     ++ [ Loc $ prefix <> "_end" ]
 
-lowerExpr :: Expr Tc -> [IR]
+lowerExpr :: Expr Lbl -> [IR]
 lowerExpr (Unary op x) = lowerExpr x ++ lowerUnaryOp op
 lowerExpr (IntLit x) = [ Push (fromInteger x) ]
 lowerExpr (Binary op x y) = lowerExpr x ++ lowerExpr y ++ lowerBinaryOp op
@@ -56,7 +56,7 @@ lowerExpr (Ternary prefix c t e) =
     ] ++ lowerExpr e
     ++ [ Loc $ prefix <> "_end" ]
 
-varAddr :: Var Tc -> [IR]
+varAddr :: Var Lbl -> [IR]
 varAddr (Var vinfo _) = [ FrameAddr (v_loc vinfo) ]
 
 lowerUnaryOp :: UnaryOp -> [IR]

@@ -1,6 +1,3 @@
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell    #-}
-
 module Hascaf.Types.AST where
 
 import           Data.Kind
@@ -38,11 +35,11 @@ data Expr x
     = IntLit Integer
     | Unary UnaryOp (Expr x)
     | Binary BinaryOp (Expr x) (Expr x)
-    | Assignment (LValue x) (Expr x)
+    | Assignment (XLValue x) (Expr x)
     | VarRef (Var x)
     | Ternary (XPrefix x) (Expr x) (Expr x) (Expr x)
 
-type family LValue x :: Type
+type family XLValue x :: Type
 
 data Var x = Var (XVar x) Ident
 type family XVar x :: Type
@@ -61,17 +58,21 @@ data BinaryOp
 
 data Syn
 data Tc
+data Lbl
 
 type instance XFunction Syn = ()
-type instance XFunction Tc = FunctionInfo
+type instance XFunction Tc  = FunctionInfo
+type instance XFunction Lbl = FunctionInfo
 
 data FunctionInfo
     = FunctionInfo
     { f_localSize :: Int -- ^ Maximum size of local variables, in words
     }
 
-type instance XVar Syn = ()
-type instance XVar Tc = VarInfo
+
+type instance XVar Syn      = ()
+type instance XVar Tc       = VarInfo
+type instance XVar Lbl      = VarInfo
 
 data VarInfo
     = VarInfo
@@ -79,11 +80,15 @@ data VarInfo
     , v_loc :: Int
     }
 
-type instance LValue Syn = Expr Syn
-type instance LValue Tc = TcLValue
 
-data TcLValue
-    = VarL (Var Tc)
+type instance XLValue Syn    = Expr Syn
+type instance XLValue Tc     = LValue Tc
+type instance XLValue Lbl    = LValue Lbl
 
-type instance XPrefix Syn = ()
-type instance XPrefix Tc = T.Text
+data LValue x
+    = VarL (Var x)
+
+
+type instance XPrefix Syn   = ()
+type instance XPrefix Tc    = ()
+type instance XPrefix Lbl   = T.Text
