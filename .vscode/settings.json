@@ -1,0 +1,3 @@
+{
+    "ghcSimple.replCommand": "direnv exec . cabal v2-repl"
+}
