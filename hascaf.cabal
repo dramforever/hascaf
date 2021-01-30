@@ -23,10 +23,11 @@ source-repository head
 
 common common
   default-extensions:
+    FlexibleContexts
     NumericUnderscores
     OverloadedStrings
+    RankNTypes
     TypeFamilies
-    FlexibleContexts
     UndecidableInstances
   ghc-options: -Wall
   build-depends:
@@ -54,6 +55,7 @@ library
     Hascaf.Types.IR
     Hascaf.Utils.Compile
     Hascaf.Utils.Errors
+    Hascaf.Utils.State
   hs-source-dirs: src
 
 executable hascaf

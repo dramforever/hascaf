@@ -4,6 +4,7 @@ import           Control.Monad.State
 import           Data.Foldable
 import qualified Data.Map as M
 import           Hascaf.Types.AST
+import           Hascaf.Utils.State
 import           Lens.Micro.Platform
 
 data StackState
@@ -48,13 +49,10 @@ stackStmt (ExprS expr) =
 stackStmt (DeclS dty var initial) =
     DeclS dty <$> stackVarDef var <*> traverse stackExpr initial
 stackStmt EmptyS = pure EmptyS
-stackStmt (CompoundS compound) = do
-    savedStackSize <- use st_curStack
-    st_vars %= (M.empty :)
-    res <- CompoundS <$> stackCompound compound
-    st_curStack .= savedStackSize
-    st_vars %= tail
-    pure res
+stackStmt (CompoundS compound) =
+    preserving st_curStack . preserving st_vars $ do
+        st_vars %= (M.empty :)
+        CompoundS <$> stackCompound compound
 stackStmt (IfS () cond t e) =
     IfS () <$> stackExpr cond <*> stackStmt t <*> traverse stackStmt e
 
