@@ -6,23 +6,23 @@ import           Hascaf.Types.AST
 
 type LabelM = State Int
 
-labelProgram :: Program Tc -> Program Lbl
+labelProgram :: Program Sta -> Program Lbl
 labelProgram (Program tops) =
     Program $ evalState (traverse labelTopLevel tops) 0
 
-labelTopLevel :: TopLevel Tc -> LabelM (TopLevel Lbl)
+labelTopLevel :: TopLevel Sta -> LabelM (TopLevel Lbl)
 labelTopLevel (FunctionTop func) =
     FunctionTop <$> labelFunction func
 
-labelFunction :: Function Tc -> LabelM (Function Lbl)
+labelFunction :: Function Sta -> LabelM (Function Lbl)
 labelFunction (Function fi typ ident compound) =
     Function fi typ ident <$> labelCompound compound
 
-labelCompound :: Compound Tc -> LabelM (Compound Lbl)
+labelCompound :: Compound Sta -> LabelM (Compound Lbl)
 labelCompound (Compound stmts) =
     Compound <$> traverse labelStmt stmts
 
-labelStmt :: Stmt Tc -> LabelM (Stmt Lbl)
+labelStmt :: Stmt Sta -> LabelM (Stmt Lbl)
 labelStmt (ReturnS expr) =
     ReturnS <$> labelExpr expr
 labelStmt (ExprS expr) =
@@ -36,7 +36,7 @@ labelStmt (IfS () cond t e) = do
     let prefix = T.pack $ "__if_" ++ show next
     IfS prefix <$> labelExpr cond <*> labelStmt t <*> traverse labelStmt e
 
-labelExpr :: Expr Tc -> LabelM (Expr Lbl)
+labelExpr :: Expr Sta -> LabelM (Expr Lbl)
 labelExpr (IntLit lit) =
     pure $ IntLit lit
 labelExpr (Unary op expr) =
@@ -52,8 +52,8 @@ labelExpr (Ternary () c t e) = do
     let prefix = T.pack $ "_tern_" ++ show next
     Ternary prefix <$> labelExpr c <*> labelExpr t <*> labelExpr e
 
-labelLValue :: LValue Tc -> LabelM (LValue Lbl)
+labelLValue :: LValue Sta -> LabelM (LValue Lbl)
 labelLValue (VarL v) = VarL <$> labelVar v
 
-labelVar :: Var Tc -> LabelM (Var Lbl)
+labelVar :: Var Sta -> LabelM (Var Lbl)
 labelVar (Var vi ident) = pure $ Var vi ident

@@ -29,9 +29,7 @@ type FunctionTable = M.Map Ident Typ
 
 data StatementState
     = StatementState
-    { _ss_curStack :: Int
-    , _ss_maxStack :: Int
-    , _ss_vars :: [M.Map Ident VarInfo]
+    { _ss_vars :: [M.Map Ident Typ]
     }
 
 prettyTypeError :: TypeError -> T.Text
@@ -85,17 +83,12 @@ checkFunction (Function () typ ident compound) = do
             pureC ()
 
     let initialSS = StatementState
-            { _ss_curStack = 0
-            , _ss_maxStack = 0
-            , _ss_vars = [M.empty]
+            { _ss_vars = [M.empty]
             }
 
     table <- get
-    let (res, ss) = runState (checkCompound table typ compound) initialSS
-        fi = FunctionInfo
-            { f_localSize = ss ^. ss_maxStack
-            }
-    pure $ errs *> (Function fi typ ident <$> res)
+    let res = evalState (checkCompound table typ compound) initialSS
+    pure $ errs *> (Function () typ ident <$> res)
 
 checkCompound :: FunctionTable -> Typ -> Compound Syn -> State StatementState (TypingE (Compound Tc))
 checkCompound table ret (Compound stmts) =
@@ -123,10 +116,8 @@ checkStmt table _ret (DeclS dty var@(Var () v) initial) = do
 checkStmt _table _ret EmptyS = pureC EmptyS
 
 checkStmt table ret (CompoundS compound) = do
-    savedCurSize <- use ss_curStack
     ss_vars %= (M.empty :)
     res <- CompoundS <$.> checkCompound table ret compound
-    ss_curStack .= savedCurSize
     ss_vars %= tail
     pure res
 
@@ -172,7 +163,7 @@ checkVarUse v = do
     vdecls <- use ss_vars
     pure $ case asum (M.lookup v <$> vdecls) of
         Nothing -> mkError [UndeclaredVariable v]
-        Just vi -> pure (Var vi v, v_type vi)
+        Just typ -> pure (Var typ v, typ)
 
 checkVarDef :: Typ -> Var Syn -> State StatementState (TypingE (Var Tc))
 checkVarDef typ (Var () v) = do
@@ -181,24 +172,12 @@ checkVarDef typ (Var () v) = do
         then do
             pure $ mkError [RedefinedVariable v]
         else do
-            pos <- use ss_curStack
-            size <- ss_curStack <%= (+ 1)
-            ss_maxStack %= max size
-            let vi = VarInfo { v_type = typ, v_loc = pos }
-            ss_vars . _head . at v ?= vi
-            pureC $ Var vi v
+            ss_vars . _head . at v ?= typ
+            pureC $ Var typ v
 
 -- Lenses
 
-ss_curStack :: Lens' StatementState Int
-ss_curStack f x =
-    (\u' -> x { _ss_curStack = u' }) <$> f (_ss_curStack x)
-
-ss_maxStack :: Lens' StatementState Int
-ss_maxStack f x =
-    (\u' -> x { _ss_maxStack = u' }) <$> f (_ss_maxStack x)
-
-ss_vars :: Lens' StatementState [M.Map Ident VarInfo]
+ss_vars :: Lens' StatementState [M.Map Ident Typ]
 ss_vars f x =
     (\u' -> x { _ss_vars = u' }) <$> f (_ss_vars x)
 

@@ -7,7 +7,9 @@ import           Hascaf.Passes.Asm
 import           Hascaf.Passes.Label
 import           Hascaf.Passes.Lower
 import           Hascaf.Passes.Parser
+import           Hascaf.Passes.Stack
 import           Hascaf.Passes.Typing
+import           Hascaf.Types.AST
 import           Hascaf.Utils.Errors
 import           Text.Megaparsec
 
@@ -21,4 +23,7 @@ compile filePath contents = do
 
     case runErrors (checkProgram parsed) of
         Left errs -> Left (T.unlines $ ("Type error: " <>) . prettyTypeError <$> errs)
-        Right checked -> pure $ (assemble . lowerProgram . labelProgram $ checked)
+        Right checked -> pure $ compileChecked checked
+
+compileChecked :: Program Tc -> T.Text
+compileChecked = assemble . lowerProgram . labelProgram . stackProgram

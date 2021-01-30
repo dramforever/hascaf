@@ -48,6 +48,7 @@ library
     Hascaf.Passes.Label
     Hascaf.Passes.Lower
     Hascaf.Passes.Parser
+    Hascaf.Passes.Stack
     Hascaf.Passes.Typing
     Hascaf.Types.AST
     Hascaf.Types.IR

@@ -58,10 +58,12 @@ data BinaryOp
 
 data Syn
 data Tc
+data Sta
 data Lbl
 
 type instance XFunction Syn = ()
-type instance XFunction Tc  = FunctionInfo
+type instance XFunction Tc  = ()
+type instance XFunction Sta = FunctionInfo
 type instance XFunction Lbl = FunctionInfo
 
 data FunctionInfo
@@ -71,7 +73,8 @@ data FunctionInfo
 
 
 type instance XVar Syn      = ()
-type instance XVar Tc       = VarInfo
+type instance XVar Tc       = Typ
+type instance XVar Sta      = VarInfo
 type instance XVar Lbl      = VarInfo
 
 data VarInfo
@@ -83,6 +86,7 @@ data VarInfo
 
 type instance XLValue Syn    = Expr Syn
 type instance XLValue Tc     = LValue Tc
+type instance XLValue Sta    = LValue Sta
 type instance XLValue Lbl    = LValue Lbl
 
 data LValue x
@@ -91,4 +95,5 @@ data LValue x
 
 type instance XPrefix Syn   = ()
 type instance XPrefix Tc    = ()
+type instance XPrefix Sta   = ()
 type instance XPrefix Lbl   = T.Text
